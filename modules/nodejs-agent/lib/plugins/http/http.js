@@ -21,6 +21,7 @@ const onFinished = require("on-finished");
 const ContextCarrier = require("../../trace/context-carrier");
 const layerDefine = require("../../trace/span-layer");
 const componentDefine = require("../../trace/component-define");
+const ContextManager = require("../../trace/context-manager");
 
 /**
  *
@@ -34,6 +35,10 @@ module.exports = function(httpModule, instrumentation, contextManager) {
     instrumentation.enhanceMethod(httpModule && httpModule.Server && httpModule.Server.prototype, "emit", wrapEmit);
 
     instrumentation.enhanceMethod(httpModule, "request", wrapRequest);
+
+    // Initialize the call-chain by CLS
+    let _session = contextManager.createNamespace("skywalking");
+    _session.enter(_session.createContext());
 
     return httpModule;
 
@@ -66,7 +71,11 @@ module.exports = function(httpModule, instrumentation, contextManager) {
                     return undefined;
                 });
 
-                let span = contextManager.createEntrySpan(filterParams(req.url), contextCarrier);
+                let ctx = new ContextManager();
+                let _session = contextManager.getNamespace("skywalking");
+                _session.set("ctx", ctx);
+                let span = ctx.createEntrySpan(filterParams(req.url), contextCarrier);
+
                 span.component(componentDefine.Components.HTTP);
                 span.spanLayer(layerDefine.Layers.HTTP);
                 onFinished(res, function(err) {
@@ -79,7 +88,7 @@ module.exports = function(httpModule, instrumentation, contextManager) {
                         span.errorOccurred();
                     }
 
-                    contextManager.finishSpan(span);
+                    ctx.finishSpan(span);
                 });
             }
             return original.apply(this, arguments);
@@ -94,7 +103,9 @@ module.exports = function(httpModule, instrumentation, contextManager) {
     function wrapRequest(original) {
         return function(options, callback) {
             let contextCarrier = new ContextCarrier();
-            let span = contextManager.createExitSpan(options.path, options.host + ":" + options.port, contextCarrier);
+            let _session = contextManager.getNamespace("skywalking");
+            let ctx = _session.get("ctx");
+            let span = ctx.createExitSpan(options.path, options.host + ":" + options.port, contextCarrier);
             contextCarrier.pushBy(function(key, value) {
                 if (!options.hasOwnProperty("headers")) {
                     options.headers = {};

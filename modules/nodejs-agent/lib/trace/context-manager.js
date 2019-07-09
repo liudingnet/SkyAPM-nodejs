@@ -25,7 +25,7 @@ const NoopTraceContext = require("./noop-trace-context");
 const logger = require("../logger");
 const Endpoint = require("../dictionary/endpoint");
 const dictionaryManager = require("../dictionary/dictionary-manager");
-
+const CLS = require("cls-hooked");
 const NOOP_TRACE_CONTEXT = new NoopTraceContext();
 const NOOP_SPAN = new NoopSpan(NOOP_TRACE_CONTEXT);
 
@@ -52,6 +52,14 @@ function ContextManager() {
         traceContext = new TraceContext(this._activeTraceContext, spanOptions);
         return traceContext.span();
     };
+};
+
+ContextManager.prototype.createNamespace = function(namespace) {
+    return CLS.createNamespace(namespace);
+};
+
+ContextManager.prototype.getNamespace = function(namespace) {
+    return CLS.getNamespace(namespace);
 };
 
 ContextManager.prototype.inject = function(contextCarrier) {
