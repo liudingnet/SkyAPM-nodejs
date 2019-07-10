@@ -1,12 +1,12 @@
 {
-  "name": "skyapm-nodejs",
-  "version": "1.1.2",
+  "name": "skyapm-nodejs-dp",
+  "version": "1.1.5",
   "description": "The Node server instrument SDK for Apache SkyWalking",
   "main": "index.js",
   "scripts": {
     "prepare": "npm run check && npm run generate-source",
     "generate-source": "run-script-os",
-    "generate-source:win32": "rd lib/network && md lib/network && cd proto && grpc_tools_node_protoc --js_out=import_style=commonjs,binary:../lib/network/ --grpc_out=../lib/network/ common/*.proto language-agent-v2/*.proto register/*.proto",
+    "generate-source:win32": "cd .",
     "generate-source:darwin:linux": "rm -rf lib/network && mkdir -p lib/network && cd proto && grpc_tools_node_protoc --js_out=import_style=commonjs,binary:../lib/network/ --grpc_out=../lib/network/ common/*.proto language-agent-v2/*.proto register/*.proto",
     "check": "eslint lib/ && eslint index.js"
   },
@@ -33,6 +33,7 @@
   "homepage": "https://github.com/SkyAPM/SkyAPM-nodejs#readme",
   "dependencies": {
     "async": "^2.6.1",
+    "cls-hooked": "^4.2.2",
     "debug": "^3.1.0",
     "end-of-stream": "^1.4.1",
     "function-arguments": "^1.0.8",
