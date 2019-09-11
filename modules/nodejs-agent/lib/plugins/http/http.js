@@ -37,8 +37,8 @@ module.exports = function(httpModule, instrumentation, contextManager) {
     instrumentation.enhanceMethod(httpModule, "request", wrapRequest);
 
     // Initialize the call-chain by CLS
-    let _session = contextManager.createNamespace("skywalking");
-    _session.enter(_session.createContext());
+    let ns = contextManager.createNamespace("skywalking");
+
 
     return httpModule;
 
@@ -55,6 +55,7 @@ module.exports = function(httpModule, instrumentation, contextManager) {
         return endpointName;
     }
 
+
     /**
      *
      * @param {original} original
@@ -63,6 +64,9 @@ module.exports = function(httpModule, instrumentation, contextManager) {
     function wrapEmit(original) {
         return function(event, req, res) {
             if (event === "request") {
+                let obj1 = this;
+                let obj2 = arguments;
+                ns.enter(ns.createContext());
                 let contextCarrier = new ContextCarrier();
                 contextCarrier.fetchBy(function(key) {
                     if (req.headers.hasOwnProperty(key)) {
@@ -70,12 +74,13 @@ module.exports = function(httpModule, instrumentation, contextManager) {
                     }
                     return undefined;
                 });
-
-                let ctx = new ContextManager();
-                let _session = contextManager.getNamespace("skywalking");
-                _session.set("ctx", ctx);
+                let ctx = null;
+                ctx = ns.get("ctx");
+                if (ctx == null || ctx == undefined) {
+                    ctx = new ContextManager();
+                    ns.set("ctx", ctx);
+                }
                 let span = ctx.createEntrySpan(filterParams(req.url), contextCarrier);
-
                 span.component(componentDefine.Components.HTTP);
                 span.spanLayer(layerDefine.Layers.HTTP);
                 onFinished(res, function(err) {
@@ -83,15 +88,15 @@ module.exports = function(httpModule, instrumentation, contextManager) {
                         span.errorOccurred();
                         span.log(err);
                     }
-
                     if (this.statusCode > 400) {
                         span.errorOccurred();
                     }
-
                     ctx.finishSpan(span);
                 });
+                return original.apply(obj1, obj2);
+            } else {
+                return original.apply(this, arguments);
             }
-            return original.apply(this, arguments);
         };
     }
 
@@ -103,8 +108,14 @@ module.exports = function(httpModule, instrumentation, contextManager) {
     function wrapRequest(original) {
         return function(options, callback) {
             let contextCarrier = new ContextCarrier();
-            let _session = contextManager.getNamespace("skywalking");
-            let ctx = _session.get("ctx");
+            let ctx = null;
+            let ns = contextManager.getNamespace("skywalking");
+            ctx = ns.get("ctx");
+            if (ctx == null || ctx == undefined) {
+                ns.enter(ns.createContext());
+                ctx = new ContextManager();
+                ns.set("ctx", ctx);
+            }
             let span = ctx.createExitSpan(options.path, options.host + ":" + options.port, contextCarrier);
             contextCarrier.pushBy(function(key, value) {
                 if (!options.hasOwnProperty("headers")) {

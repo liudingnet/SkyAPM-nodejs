@@ -25,7 +25,7 @@ const NoopTraceContext = require("./noop-trace-context");
 const logger = require("../logger");
 const Endpoint = require("../dictionary/endpoint");
 const dictionaryManager = require("../dictionary/dictionary-manager");
-const CLS = require("cls-hooked");
+const CLS = require("cls-hooked-dp");
 const NOOP_TRACE_CONTEXT = new NoopTraceContext();
 const NOOP_SPAN = new NoopSpan(NOOP_TRACE_CONTEXT);
 
