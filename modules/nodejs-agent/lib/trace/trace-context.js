@@ -96,8 +96,11 @@ TraceContext.prototype.inject = function(contextCarrier) {
     });
 
 
-    contextCarrier.setParentOperationId(this._parentTraceContext.span().getOperationId());
-    contextCarrier.setParentOperationName(this._parentTraceContext.span().getOperationName());
+    if (this._parentTraceContext.span().getOperationName()) {
+        contextCarrier.setParentOperationName(this._parentTraceContext.span().getOperationName());
+    } else {
+        contextCarrier.setParentOperationId(this._parentTraceContext.span().getOperationId());
+    }
 
 /*    this._span.fetchOperationNameInfo(function(operationId) {
         contextCarrier.setParentOperationId(operationId);
