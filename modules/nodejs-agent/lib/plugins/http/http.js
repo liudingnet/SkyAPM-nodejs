@@ -39,7 +39,6 @@ module.exports = function(httpModule, instrumentation, contextManager) {
     // Initialize the call-chain by CLS
     let ns = contextManager.createNamespace("skywalking");
 
-
     return httpModule;
 
     /**
@@ -77,7 +76,7 @@ module.exports = function(httpModule, instrumentation, contextManager) {
                 let ctx = null;
                 ctx = ns.get("ctx");
                 if (ctx == null || ctx == undefined) {
-                    ctx = new ContextManager();
+                    ctx = new ContextManager(undefined);
                     ns.set("ctx", ctx);
                 }
                 let span = ctx.createEntrySpan(filterParams(req.url), contextCarrier);
@@ -109,24 +108,25 @@ module.exports = function(httpModule, instrumentation, contextManager) {
         return function(options, callback) {
             let contextCarrier = new ContextCarrier();
             let ctx = null;
+            let result = null;
             let ns = contextManager.getNamespace("skywalking");
             ctx = ns.get("ctx");
-            if (ctx == null || ctx == undefined) {
-                ns.enter(ns.createContext());
-                ctx = new ContextManager();
-                ns.set("ctx", ctx);
+            if (ctx != null || ctx != undefined) {
+                ctx = new ContextManager(ctx.activeTraceContext());
+                let span = ctx.createExitSpan(options.path, options.host || options.hostname + ":" + options.port, contextCarrier);
+                contextCarrier.pushBy(function(key, value) {
+                    if (!options.hasOwnProperty("headers")) {
+                        options.headers = {};
+                    }
+                    options.headers[key] = value;
+                });
+                span.component(componentDefine.Components.HTTP);
+                span.spanLayer(layerDefine.Layers.HTTP);
+                result = original.apply(this, arguments);
+                // ctx.finishSpan(span);
+            } else {
+                result = original.apply(this, arguments);
             }
-            let span = ctx.createExitSpan(options.path, options.host + ":" + options.port, contextCarrier);
-            contextCarrier.pushBy(function(key, value) {
-                if (!options.hasOwnProperty("headers")) {
-                    options.headers = {};
-                }
-                options.headers[key] = value;
-            });
-            span.component(componentDefine.Components.HTTP);
-            span.spanLayer(layerDefine.Layers.HTTP);
-            let result = original.apply(this, arguments);
-            ctx.finishSpan(span);
             return result;
         };
     }

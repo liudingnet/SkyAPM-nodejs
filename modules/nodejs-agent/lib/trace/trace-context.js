@@ -95,11 +95,15 @@ TraceContext.prototype.inject = function(contextCarrier) {
         primaryDistributedTraceId = traceSegment.traceSegmentId().encode();
     });
 
-    this._span.fetchOperationNameInfo(function(operationId) {
+
+    contextCarrier.setParentOperationId(this._parentTraceContext.span().getOperationId());
+    contextCarrier.setParentOperationName(this._parentTraceContext.span().getOperationName());
+
+/*    this._span.fetchOperationNameInfo(function(operationId) {
         contextCarrier.setParentOperationId(operationId);
     }, function(operationName) {
         contextCarrier.setParentOperationName(operationName);
-    });
+    });*/
 
 
     this._span.fetchPeerInfo(function(peerId) {
@@ -108,7 +112,7 @@ TraceContext.prototype.inject = function(contextCarrier) {
         contextCarrier.setPeerHost(peerHost);
     });
 
-    contextCarrier.setSpanId(this.spanId());
+    contextCarrier.setSpanId(this._parentTraceContext.span().getSpanId());
     contextCarrier.setEntryApplicationInstanceId(entryApplicationInstanceId);
     contextCarrier.setPrimaryDistributedTraceId(primaryDistributedTraceId);
     contextCarrier.setTraceSegmentId(this._traceSegment.traceSegmentId());

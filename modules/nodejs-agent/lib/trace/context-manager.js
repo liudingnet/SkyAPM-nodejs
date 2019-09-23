@@ -31,9 +31,11 @@ const NOOP_SPAN = new NoopSpan(NOOP_TRACE_CONTEXT);
 
 /**
  * @author zhang xin
+ * @param {traceContext} parentTraceContext
  */
-function ContextManager() {
+function ContextManager(parentTraceContext) {
     this._activeTraceContext = undefined;
+    this._parentTraceContext = parentTraceContext;
     this._dictionaryManager = dictionaryManager;
     this._createSpan = function(spanOptions) {
         let traceContext = NOOP_TRACE_CONTEXT;
@@ -49,7 +51,8 @@ function ContextManager() {
             return traceContext.span();
         }
 
-        traceContext = new TraceContext(this._activeTraceContext, spanOptions);
+        traceContext = new TraceContext(this._parentTraceContext, spanOptions);
+        this.active(traceContext);
         return traceContext.span();
     };
 };
@@ -81,7 +84,7 @@ ContextManager.prototype.extract = function(contextCarrier) {
 ContextManager.prototype.finishSpan = function(span) {
     let finishTraceContext = span.traceContext();
     finishTraceContext.finish(span);
-    this.active(finishTraceContext.parentTraceContext.apply(finishTraceContext, []));
+    // this.active(finishTraceContext.parentTraceContext.apply(finishTraceContext, []));
 };
 
 ContextManager.prototype.active = function(traceContext) {

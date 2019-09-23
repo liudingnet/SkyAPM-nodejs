@@ -52,6 +52,18 @@ function Span(spanOptions, traceContext) {
     this._tags = [];
 }
 
+Span.prototype.getOperationId = function() {
+    return this._operationId;
+};
+
+Span.prototype.getOperationName = function() {
+    return this._operationName;
+};
+
+Span.prototype.finish = function() {
+    this._endTime = new Date().getTime();
+};
+
 Span.prototype.start = function() {
     this._startTime = new Date().getTime();
 };

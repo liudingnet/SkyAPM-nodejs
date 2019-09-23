@@ -46,9 +46,9 @@ TraceSegment.prototype.traceSegmentId = function() {
 TraceSegment.prototype.archive = function(span) {
     this._finishedSpan.push(span);
 
-    if ((--this._runningSpanSize) == 0) {
+    // if ((--this._runningSpanSize) == 0) {
         this.finish();
-    }
+    // }
 };
 
 TraceSegment.prototype.finish = function() {
